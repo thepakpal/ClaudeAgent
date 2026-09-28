@@ -1,0 +1,232 @@
+<title>Daily Job Digest</title>
+<style>
+  /* Layout: centered single-column feed — a stats strip, then ranked job cards */
+  :root{
+    --paper:#f3f4f7; --ink:#161a2b; --ink-dim:#5b6178; --line:#dcdfe8;
+    --card:#ffffff; --accent:#4a3ff0; --accent-soft:#eceafe;
+    --new:#0f7a52; --new-soft:#e3f6ee;
+    --score-hi:#0f7a52; --score-mid:#b5790a; --score-lo:#5b6178;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#12141f; --ink:#eceef7; --ink-dim:#9298b3;
+      --card:#191c2b; --line:#2a2e43; --accent:#8b7fff; --accent-soft:#242149;
+      --new:#3fd694; --new-soft:#123328;
+      --score-hi:#3fd694; --score-mid:#e2b04a; --score-lo:#9298b3;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#12141f; --ink:#eceef7; --ink-dim:#9298b3;
+    --card:#191c2b; --line:#2a2e43; --accent:#8b7fff; --accent-soft:#242149;
+    --new:#3fd694; --new-soft:#123328;
+    --score-hi:#3fd694; --score-mid:#e2b04a; --score-lo:#9298b3;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body{
+    background: var(--paper); color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    padding-inline: 16px;
+  }
+  .wrap{ max-width: 720px; margin: 0 auto; padding-block: 32px 64px; }
+
+  h1{
+    font-family: "Newsreader", Georgia, serif;
+    font-size: clamp(28px, 6vw, 40px);
+    font-weight: 600; margin: 0 0 4px; text-wrap: balance;
+  }
+  .headline{ color: var(--ink-dim); font-size: 15px; margin: 0 0 4px; }
+  .portfolio{ color: var(--accent); text-decoration: none; font-size: 14px; }
+  .portfolio:hover{ text-decoration: underline; }
+
+  .meta-row{
+    display:flex; flex-wrap:wrap; gap:10px; margin-top:20px;
+  }
+  .stat{
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 14px; flex: 1 1 140px; min-width: 0;
+  }
+  .stat .num{
+    font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums;
+    font-size: 22px; font-weight: 600; display:block;
+  }
+  .stat .label{ font-size: 12px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: .04em; }
+
+  .disclosure{
+    margin-top: 20px; padding: 12px 14px; border-radius: 10px;
+    background: var(--accent-soft); color: var(--ink); font-size: 13px; line-height: 1.5;
+    border: 1px solid var(--line);
+  }
+  .disclosure strong{ color: var(--accent); }
+
+  .section-label{
+    margin: 32px 0 12px; font-size: 12px; text-transform: uppercase;
+    letter-spacing: .06em; color: var(--ink-dim); font-family: "IBM Plex Mono", monospace;
+  }
+
+  .job-list{ display:flex; flex-direction:column; gap: 12px; }
+  .job{
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 16px 18px; display:flex; flex-direction:column; gap: 8px; min-width: 0;
+  }
+  .job-top{ display:flex; justify-content:space-between; align-items:flex-start; gap: 12px; }
+  .job-title{ font-size: 17px; font-weight: 600; margin: 0; min-width:0; }
+  .job-company{ color: var(--ink-dim); font-size: 13.5px; margin-top: 2px; }
+
+  .score-badge{
+    font-family: "IBM Plex Mono", monospace; font-size: 12.5px; font-weight: 600;
+    padding: 3px 9px; border-radius: 999px; white-space: nowrap; flex-shrink: 0;
+    border: 1px solid currentColor;
+  }
+  .score-hi{ color: var(--score-hi); }
+  .score-mid{ color: var(--score-mid); }
+  .score-lo{ color: var(--score-lo); }
+
+  .job-meta{ display:flex; flex-wrap:wrap; gap: 6px 10px; font-size: 12.5px; color: var(--ink-dim); }
+  .tags{ display:flex; flex-wrap:wrap; gap: 6px; margin-top: 2px; }
+  .tag{
+    font-size: 11.5px; background: var(--accent-soft); color: var(--accent);
+    padding: 2px 8px; border-radius: 999px;
+  }
+  .new-badge{
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+    background: var(--new-soft); color: var(--new); padding: 2px 8px; border-radius: 999px;
+  }
+
+  .job-footer{ display:flex; justify-content:space-between; align-items:center; gap: 12px; margin-top: 4px; }
+  .apply-link{
+    color: var(--accent); font-weight: 600; font-size: 13.5px; text-decoration: none;
+  }
+  .apply-link:hover{ text-decoration: underline; }
+  .source{ font-size: 11.5px; color: var(--ink-dim); font-family: "IBM Plex Mono", monospace; }
+
+  .empty{
+    margin-top: 40px; padding: 28px 20px; text-align:center; border: 1px dashed var(--line);
+    border-radius: 14px; color: var(--ink-dim); font-size: 14px; line-height: 1.6;
+  }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+
+<div class="wrap">
+  <h1>Daily Job Digest</h1>
+  <p class="headline" id="headline"></p>
+  <a class="portfolio" id="portfolio-link" href="#" target="_blank" rel="noopener"></a>
+
+  <div class="meta-row">
+    <div class="stat"><span class="num" id="stat-shown">0</span><span class="label">Shown today</span></div>
+    <div class="stat"><span class="num" id="stat-new">0</span><span class="label">New matches</span></div>
+    <div class="stat"><span class="num" id="stat-scanned">0</span><span class="label">Candidates scanned</span></div>
+  </div>
+
+  <div class="disclosure">
+    <strong>How this works:</strong> matches are pulled from public job-board APIs (no LinkedIn scraping, no automated applications) and ranked against your resume profile. You review and apply yourself — nothing is submitted on your behalf.
+    <span id="generated-line"></span>
+  </div>
+
+  <div class="section-label">Ranked matches</div>
+  <div class="job-list" id="job-list"></div>
+  <div class="empty" id="empty-state" hidden></div>
+</div>
+
+<script>
+(function(){
+  var data = __DIGEST_DATA__;
+
+  document.title = "Daily Job Digest";
+  document.getElementById('headline').textContent = data.headline || '';
+  var pl = document.getElementById('portfolio-link');
+  if (data.portfolio) { pl.href = data.portfolio; pl.textContent = data.portfolio.replace(/^https?:\/\//,''); }
+  else { pl.style.display = 'none'; }
+
+  document.getElementById('generated-line').textContent = ' Last run: ' + data.generated_str + '.';
+
+  var jobs = data.jobs || [];
+  var newCount = jobs.filter(function(j){ return j.is_new; }).length;
+  document.getElementById('stat-shown').textContent = jobs.length;
+  document.getElementById('stat-new').textContent = newCount;
+  document.getElementById('stat-scanned').textContent = data.total_candidates || 0;
+
+  var list = document.getElementById('job-list');
+  var empty = document.getElementById('empty-state');
+
+  if (jobs.length === 0) {
+    list.hidden = true;
+    empty.hidden = false;
+    empty.textContent = 'No matches yet. Either the last run found nothing above the relevance bar, or job-board API access hasn\'t been enabled for this environment yet.';
+    return;
+  }
+
+  function scoreClass(score){
+    if (score >= 10) return 'score-hi';
+    if (score >= 5) return 'score-mid';
+    return 'score-lo';
+  }
+
+  jobs.forEach(function(job){
+    var el = document.createElement('div');
+    el.className = 'job';
+
+    var top = document.createElement('div');
+    top.className = 'job-top';
+
+    var titleWrap = document.createElement('div');
+    titleWrap.style.minWidth = '0';
+    var title = document.createElement('p');
+    title.className = 'job-title';
+    title.textContent = job.title || 'Untitled role';
+    var company = document.createElement('div');
+    company.className = 'job-company';
+    company.textContent = job.company || 'Unknown company';
+    titleWrap.appendChild(title);
+    titleWrap.appendChild(company);
+
+    var badge = document.createElement('span');
+    badge.className = 'score-badge ' + scoreClass(job.score || 0);
+    badge.textContent = 'match ' + (job.score || 0);
+
+    top.appendChild(titleWrap);
+    top.appendChild(badge);
+    el.appendChild(top);
+
+    var meta = document.createElement('div');
+    meta.className = 'job-meta';
+    if (job.location) { var loc = document.createElement('span'); loc.textContent = '📍 ' + job.location; meta.appendChild(loc); }
+    if (job.job_type) { var jt = document.createElement('span'); jt.textContent = job.job_type; meta.appendChild(jt); }
+    if (job.is_new) { var nb = document.createElement('span'); nb.className='new-badge'; nb.textContent='New'; meta.appendChild(nb); }
+    el.appendChild(meta);
+
+    if (job.matched_terms && job.matched_terms.length) {
+      var tags = document.createElement('div');
+      tags.className = 'tags';
+      job.matched_terms.slice(0, 8).forEach(function(t){
+        var tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = t;
+        tags.appendChild(tag);
+      });
+      el.appendChild(tags);
+    }
+
+    var footer = document.createElement('div');
+    footer.className = 'job-footer';
+    var link = document.createElement('a');
+    link.className = 'apply-link';
+    link.href = job.url || '#';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = 'View & apply →';
+    var src = document.createElement('span');
+    src.className = 'source';
+    src.textContent = job.source || '';
+    footer.appendChild(link);
+    footer.appendChild(src);
+    el.appendChild(footer);
+
+    list.appendChild(el);
+  });
+})();
+</script>

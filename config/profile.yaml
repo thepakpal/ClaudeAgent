@@ -1,0 +1,62 @@
+# Candidate profile used to score/rank incoming job listings.
+# Edit this file any time your resume, target roles, or preferences change.
+
+name: "Deepak Kumar Pal"
+email: "deepak.pal.des23@nsut.ac.in"
+portfolio: "https://www.thepakpal.dev"
+
+headline: "B.Design student (NSUT Delhi) — Product/UX Designer, design-engineering hybrid"
+
+education:
+  - "Bachelor of Design, Netaji Subhas University of Technology, Delhi (2023-27), CGPA 8.84/10"
+
+skills:
+  # Weighted keywords used for match scoring. Higher weight = matters more.
+  - { term: "UX Design", weight: 3 }
+  - { term: "UX Research", weight: 3 }
+  - { term: "Product Design", weight: 3 }
+  - { term: "Product Designer", weight: 3 }
+  - { term: "UI/UX", weight: 3 }
+  - { term: "User Research", weight: 2 }
+  - { term: "Usability Testing", weight: 2 }
+  - { term: "Information Architecture", weight: 2 }
+  - { term: "Product Thinking", weight: 2 }
+  - { term: "Product Management", weight: 2 }
+  - { term: "Figma", weight: 2 }
+  - { term: "Prototyping", weight: 2 }
+  - { term: "Design System", weight: 2 }
+  - { term: "Accessibility", weight: 2 }
+  - { term: "Photoshop", weight: 1 }
+  - { term: "Excel", weight: 1 }
+  - { term: "SQL", weight: 1 }
+  - { term: "HTML", weight: 1 }
+  - { term: "CSS", weight: 1 }
+  - { term: "Frontend", weight: 1 }
+  - { term: "AI", weight: 1 }
+  - { term: "Design Engineering", weight: 2 }
+  - { term: "Lean Six Sigma", weight: 1 }
+  - { term: "Intern", weight: 1 }
+
+# Job titles searched for (broader design + tech-adjacent, per your instruction)
+target_titles:
+  - "UX Designer"
+  - "Product Designer"
+  - "UI/UX Designer"
+  - "UX Research"
+  - "Design Intern"
+  - "UX Intern"
+  - "Product Design Intern"
+  - "Product Management Intern"
+  - "Design Engineer"
+  - "Junior Product Designer"
+
+# Location preference: India + Remote
+locations:
+  - "India"
+  - "Remote"
+
+experience_level: "internship, entry-level, junior"
+
+resume_files:
+  - "ResumeOnTnp.pdf"
+  - "ResumeOnPortfolio.pdf"
