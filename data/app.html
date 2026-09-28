@@ -1,0 +1,375 @@
+<title>Job Match Board</title>
+<style>
+  /* Layout: sticky bio header, live-updating ranked job list, inline note drafting per card */
+  :root{
+    --paper:#f3f4f7; --ink:#161a2b; --ink-dim:#5b6178; --line:#dcdfe8;
+    --card:#ffffff; --accent:#4a3ff0; --accent-soft:#eceafe;
+    --new:#0f7a52; --new-soft:#e3f6ee;
+    --score-hi:#0f7a52; --score-mid:#b5790a; --score-lo:#5b6178;
+    --applied:#0f7a52; --applied-soft:#e3f6ee; --saved:#b5790a; --saved-soft:#fbf1de;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#12141f; --ink:#eceef7; --ink-dim:#9298b3;
+      --card:#191c2b; --line:#2a2e43; --accent:#8b7fff; --accent-soft:#242149;
+      --new:#3fd694; --new-soft:#123328;
+      --score-hi:#3fd694; --score-mid:#e2b04a; --score-lo:#9298b3;
+      --applied:#3fd694; --applied-soft:#123328; --saved:#e2b04a; --saved-soft:#332a11;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#12141f; --ink:#eceef7; --ink-dim:#9298b3;
+    --card:#191c2b; --line:#2a2e43; --accent:#8b7fff; --accent-soft:#242149;
+    --new:#3fd694; --new-soft:#123328;
+    --score-hi:#3fd694; --score-mid:#e2b04a; --score-lo:#9298b3;
+    --applied:#3fd694; --applied-soft:#123328; --saved:#e2b04a; --saved-soft:#332a11;
+    color-scheme: dark;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    background:var(--paper); color:var(--ink);
+    font-family:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
+    padding-inline:16px;
+  }
+  .wrap{ max-width:720px; margin:0 auto; padding-block:24px 64px; }
+
+  header{
+    position:sticky; top:env(safe-area-inset-top,0px); z-index:5;
+    background:var(--paper); padding-block:8px 14px; margin-bottom:6px;
+    border-bottom:1px solid var(--line);
+  }
+  h1{
+    font-family:"Newsreader", Georgia, serif; font-size:clamp(24px,5.5vw,32px);
+    font-weight:600; margin:0 0 2px; text-wrap:balance;
+  }
+  .headline{ color:var(--ink-dim); font-size:14px; margin:0 0 6px; }
+  .bio-row{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; }
+  .portfolio{ color:var(--accent); text-decoration:none; font-size:13px; font-weight:600; }
+  .portfolio:hover{ text-decoration:underline; }
+  .skill-chip{
+    font-size:11px; background:var(--accent-soft); color:var(--accent);
+    padding:2px 8px; border-radius:999px;
+  }
+
+  .meta-row{ display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+  .stat{
+    background:var(--card); border:1px solid var(--line); border-radius:10px;
+    padding:9px 13px; flex:1 1 130px; min-width:0;
+  }
+  .stat .num{
+    font-family:"IBM Plex Mono", monospace; font-variant-numeric:tabular-nums;
+    font-size:20px; font-weight:600; display:block;
+  }
+  .stat .label{ font-size:11.5px; color:var(--ink-dim); text-transform:uppercase; letter-spacing:.04em; }
+  .sync-line{ font-size:12px; color:var(--ink-dim); margin-top:10px; }
+  .sync-dot{ display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--new); margin-right:5px; }
+
+  .filter-row{ display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+  .filter-btn{
+    font-size:12.5px; padding:5px 12px; border-radius:999px; border:1px solid var(--line);
+    background:var(--card); color:var(--ink-dim); cursor:pointer; font-family:inherit;
+  }
+  .filter-btn.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
+
+  .section-label{
+    margin:22px 0 10px; font-size:12px; text-transform:uppercase;
+    letter-spacing:.06em; color:var(--ink-dim); font-family:"IBM Plex Mono", monospace;
+  }
+
+  .job-list{ display:flex; flex-direction:column; gap:12px; }
+  .job{
+    background:var(--card); border:1px solid var(--line); border-radius:14px;
+    padding:16px 18px; display:flex; flex-direction:column; gap:8px; min-width:0;
+  }
+  .job-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  .job-title{ font-size:17px; font-weight:600; margin:0; min-width:0; }
+  .job-company{ color:var(--ink-dim); font-size:13.5px; margin-top:2px; }
+
+  .score-badge{
+    font-family:"IBM Plex Mono", monospace; font-size:12.5px; font-weight:600;
+    padding:3px 9px; border-radius:999px; white-space:nowrap; flex-shrink:0;
+    border:1px solid currentColor;
+  }
+  .score-hi{ color:var(--score-hi); } .score-mid{ color:var(--score-mid); } .score-lo{ color:var(--score-lo); }
+
+  .job-meta{ display:flex; flex-wrap:wrap; gap:6px 10px; font-size:12.5px; color:var(--ink-dim); }
+  .tags{ display:flex; flex-wrap:wrap; gap:6px; margin-top:2px; }
+  .tag{ font-size:11.5px; background:var(--accent-soft); color:var(--accent); padding:2px 8px; border-radius:999px; }
+  .new-badge{
+    font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+    background:var(--new-soft); color:var(--new); padding:2px 8px; border-radius:999px;
+  }
+
+  .job-actions{ display:flex; flex-wrap:wrap; gap:8px; margin-top:4px; align-items:center; }
+  .btn{
+    font-family:inherit; font-size:13px; font-weight:600; border-radius:8px; padding:7px 12px;
+    cursor:pointer; border:1px solid var(--line); background:var(--card); color:var(--ink);
+  }
+  .btn-primary{ background:var(--accent); color:#fff; border-color:var(--accent); text-decoration:none; display:inline-block; }
+  .btn-primary:hover{ opacity:.92; }
+  .status-btn{ font-size:12px; padding:6px 10px; }
+  .status-btn.is-saved{ background:var(--saved-soft); color:var(--saved); border-color:var(--saved); }
+  .status-btn.is-applied{ background:var(--applied-soft); color:var(--applied); border-color:var(--applied); }
+  .source{ font-size:11.5px; color:var(--ink-dim); font-family:"IBM Plex Mono", monospace; margin-left:auto; }
+
+  .note-panel{
+    margin-top:4px; border-top:1px dashed var(--line); padding-top:10px; display:none;
+  }
+  .note-panel.open{ display:block; }
+  .note-panel textarea{
+    width:100%; min-height:90px; font-family:"IBM Plex Sans", sans-serif; font-size:13px;
+    background:var(--paper); color:var(--ink); border:1px solid var(--line); border-radius:8px;
+    padding:10px; resize:vertical;
+  }
+  .note-actions{ display:flex; gap:8px; margin-top:8px; }
+  .note-hint{ font-size:12px; color:var(--ink-dim); margin-top:4px; }
+
+  .empty{
+    margin-top:40px; padding:28px 20px; text-align:center; border:1px dashed var(--line);
+    border-radius:14px; color:var(--ink-dim); font-size:14px; line-height:1.6;
+  }
+  [hidden]{ display:none!important; }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+
+<div class="wrap">
+  <header>
+    <h1>Job Match Board</h1>
+    <p class="headline" id="headline"></p>
+    <div class="bio-row">
+      <a class="portfolio" id="portfolio-link" href="#" target="_blank" rel="noopener"></a>
+    </div>
+  </header>
+
+  <div class="meta-row">
+    <div class="stat"><span class="num" id="stat-shown">–</span><span class="label">Shown</span></div>
+    <div class="stat"><span class="num" id="stat-new">–</span><span class="label">New</span></div>
+    <div class="stat"><span class="num" id="stat-scanned">–</span><span class="label">Scanned</span></div>
+  </div>
+  <div class="sync-line"><span class="sync-dot"></span><span id="sync-text">Waiting for first sync…</span></div>
+
+  <div class="filter-row">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="new">New</button>
+    <button class="filter-btn" data-filter="saved">Saved</button>
+    <button class="filter-btn" data-filter="applied">Applied</button>
+  </div>
+
+  <div class="section-label">Ranked matches</div>
+  <div class="job-list" id="job-list"></div>
+  <div class="empty" id="empty-state" hidden></div>
+</div>
+
+<script>
+(function(){
+  var BIO = {
+    name: "Deepak Kumar Pal",
+    headline: "B.Design student (NSUT Delhi) — Product/UX Designer, design-engineering hybrid",
+    portfolio: "https://www.thepakpal.dev",
+    skills: ["UX Research","Product Design","Figma","Prototyping","Design Systems","Accessibility","HTML/CSS","AI-assisted Design"],
+    resumeSummary: "Deepak Kumar Pal is a B.Design student at NSUT Delhi (CGPA 8.84/10, class of 2027) focused on UX and product design. He led PriceWise, a price-comparison app MVP, running 10-25 user interviews and a 55+ respondent survey, then designing a 21-screen accessibility-first Figma system with colour-blind modes and high-contrast options. He conceived and shipped Nest, a live private-journaling PWA (Next.js, TypeScript, Supabase, Groq API, Vercel) built with Claude Code as an AI engineering partner, including AI mood tagging and privacy-first product decisions. He also ran a KPMG Lean Six Sigma Green Belt quality-improvement project at Shahi Exports as project manager. Skills: UX research, usability testing, information architecture, product thinking, Figma, Photoshop, SQL, HTML/CSS, AI-assisted design and development, Lean Six Sigma (DMAIC)."
+  };
+
+  document.getElementById('headline').textContent = BIO.headline;
+  var pl = document.getElementById('portfolio-link');
+  pl.href = BIO.portfolio; pl.textContent = BIO.portfolio.replace(/^https?:\/\//,'');
+  var bioRow = document.querySelector('.bio-row');
+  BIO.skills.forEach(function(s){
+    var chip = document.createElement('span'); chip.className='skill-chip'; chip.textContent=s;
+    bioRow.appendChild(chip);
+  });
+
+  var STATUS_KEY = 'jobmatch_status_v1';
+  function loadStatuses(){ try { return JSON.parse(localStorage.getItem(STATUS_KEY) || '{}'); } catch(e){ return {}; } }
+  function saveStatus(id, status){
+    try {
+      var all = loadStatuses();
+      if (status) all[id] = status; else delete all[id];
+      localStorage.setItem(STATUS_KEY, JSON.stringify(all));
+    } catch(e){}
+  }
+
+  var currentFilter = 'all';
+  var latestJobs = [];
+  var sampleFn = null;
+
+  function scoreClass(score){
+    if (score >= 10) return 'score-hi';
+    if (score >= 5) return 'score-mid';
+    return 'score-lo';
+  }
+
+  function renderJobs(){
+    var list = document.getElementById('job-list');
+    var empty = document.getElementById('empty-state');
+    var statuses = loadStatuses();
+    list.innerHTML = '';
+
+    var visible = latestJobs.filter(function(j){
+      if (currentFilter === 'all') return true;
+      if (currentFilter === 'new') return j.is_new;
+      return statuses[j.id] === currentFilter;
+    });
+
+    if (visible.length === 0) {
+      list.hidden = true; empty.hidden = false;
+      empty.textContent = latestJobs.length === 0
+        ? 'No matches synced yet. The background sync runs about once an hour — check back shortly, or ask Claude to run it now.'
+        : 'Nothing in this filter yet.';
+      return;
+    }
+    list.hidden = false; empty.hidden = true;
+
+    visible.forEach(function(job){
+      var status = statuses[job.id] || '';
+      var el = document.createElement('div');
+      el.className = 'job';
+
+      var top = document.createElement('div'); top.className = 'job-top';
+      var titleWrap = document.createElement('div'); titleWrap.style.minWidth = '0';
+      var title = document.createElement('p'); title.className = 'job-title'; title.textContent = job.title || 'Untitled role';
+      var company = document.createElement('div'); company.className = 'job-company'; company.textContent = job.company || 'Unknown company';
+      titleWrap.appendChild(title); titleWrap.appendChild(company);
+      var badge = document.createElement('span'); badge.className = 'score-badge ' + scoreClass(job.score || 0); badge.textContent = 'match ' + (job.score || 0);
+      top.appendChild(titleWrap); top.appendChild(badge);
+      el.appendChild(top);
+
+      var meta = document.createElement('div'); meta.className = 'job-meta';
+      if (job.location) { var loc = document.createElement('span'); loc.textContent = '📍 ' + job.location; meta.appendChild(loc); }
+      if (job.job_type) { var jt = document.createElement('span'); jt.textContent = job.job_type; meta.appendChild(jt); }
+      if (job.is_new) { var nb = document.createElement('span'); nb.className='new-badge'; nb.textContent='New'; meta.appendChild(nb); }
+      el.appendChild(meta);
+
+      if (job.matched_terms && job.matched_terms.length) {
+        var tags = document.createElement('div'); tags.className = 'tags';
+        job.matched_terms.slice(0, 8).forEach(function(t){
+          var tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = t; tags.appendChild(tag);
+        });
+        el.appendChild(tags);
+      }
+
+      var actions = document.createElement('div'); actions.className = 'job-actions';
+
+      var applyLink = document.createElement('a');
+      applyLink.className = 'btn btn-primary'; applyLink.href = job.url || '#'; applyLink.target = '_blank'; applyLink.rel = 'noopener';
+      applyLink.textContent = 'View & apply →';
+      actions.appendChild(applyLink);
+
+      var noteBtn = document.createElement('button');
+      noteBtn.className = 'btn'; noteBtn.type = 'button'; noteBtn.textContent = 'Draft note';
+      actions.appendChild(noteBtn);
+
+      var savedBtn = document.createElement('button');
+      savedBtn.className = 'btn status-btn' + (status==='saved' ? ' is-saved' : '');
+      savedBtn.type = 'button'; savedBtn.textContent = status==='saved' ? '★ Saved' : '☆ Save';
+      actions.appendChild(savedBtn);
+
+      var appliedBtn = document.createElement('button');
+      appliedBtn.className = 'btn status-btn' + (status==='applied' ? ' is-applied' : '');
+      appliedBtn.type = 'button'; appliedBtn.textContent = status==='applied' ? '✓ Applied' : 'Mark applied';
+      actions.appendChild(appliedBtn);
+
+      var src = document.createElement('span'); src.className = 'source'; src.textContent = job.source || '';
+      actions.appendChild(src);
+      el.appendChild(actions);
+
+      savedBtn.addEventListener('click', function(){
+        var s = loadStatuses(); var next = s[job.id] === 'saved' ? '' : 'saved';
+        saveStatus(job.id, next); renderJobs();
+      });
+      appliedBtn.addEventListener('click', function(){
+        var s = loadStatuses(); var next = s[job.id] === 'applied' ? '' : 'applied';
+        saveStatus(job.id, next); renderJobs();
+      });
+
+      var panel = document.createElement('div'); panel.className = 'note-panel';
+      var ta = document.createElement('textarea'); ta.readOnly = true; ta.placeholder = 'Drafting…';
+      var noteActions = document.createElement('div'); noteActions.className = 'note-actions';
+      var copyBtn = document.createElement('button'); copyBtn.className = 'btn'; copyBtn.type = 'button'; copyBtn.textContent = 'Copy';
+      var hint = document.createElement('div'); hint.className = 'note-hint';
+      hint.textContent = 'Drafted from your resume — read it over and tweak before sending.';
+      noteActions.appendChild(copyBtn);
+      panel.appendChild(ta); panel.appendChild(noteActions); panel.appendChild(hint);
+      el.appendChild(panel);
+
+      var drafted = false;
+      noteBtn.addEventListener('click', function(){
+        panel.classList.toggle('open');
+        if (!panel.classList.contains('open') || drafted) return;
+        if (!sampleFn) { ta.value = 'AI drafting isn\'t available in this view.'; return; }
+        drafted = true;
+        ta.value = '';
+        ta.placeholder = 'Drafting…';
+        var prompt = "Write a short, warm, specific 3-4 sentence outreach/application note from this candidate for this exact role, to paste into a LinkedIn Easy Apply message or cover note field. No greeting/signoff, no generic filler, mention 1-2 concrete matched skills or projects.\n\nCANDIDATE:\n" + BIO.resumeSummary + "\n\nROLE:\nTitle: " + (job.title||'') + "\nCompany: " + (job.company||'') + "\nMatched skills: " + (job.matched_terms||[]).join(', ');
+        sampleFn(prompt, { modelTier: 'quick' }).then(function(res){
+          ta.value = (res && res.text) ? res.text.trim() : 'Could not draft a note — try again.';
+        }).catch(function(err){
+          ta.value = 'Drafting failed (' + ((err && err.code) || 'error') + '). Try again in a moment.';
+        });
+      });
+
+      copyBtn.addEventListener('click', function(){
+        if (!ta.value) return;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(ta.value).catch(function(){ ta.select(); });
+        } else { ta.select(); }
+        var orig = copyBtn.textContent; copyBtn.textContent = 'Copied';
+        setTimeout(function(){ copyBtn.textContent = orig; }, 1200);
+      });
+
+      list.appendChild(el);
+    });
+  }
+
+  document.querySelectorAll('.filter-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      renderJobs();
+    });
+  });
+
+  function fmtSyncTime(ts){
+    if (!ts) return 'never';
+    var d = new Date(ts * 1000);
+    var diffMin = Math.round((Date.now() - d.getTime()) / 60000);
+    if (diffMin < 2) return 'just now';
+    if (diffMin < 60) return diffMin + ' min ago';
+    var diffHr = Math.round(diffMin / 60);
+    return diffHr + (diffHr === 1 ? ' hour ago' : ' hours ago');
+  }
+
+  async function init(){
+    var db = null, sample = null;
+    try { db = await claude.use('db'); } catch(e){}
+    try { sample = await claude.use('sample'); } catch(e){}
+    sampleFn = sample;
+
+    if (!db) {
+      document.getElementById('sync-text').textContent = 'Live sync unavailable in this view.';
+      renderJobs();
+      return;
+    }
+
+    db.collection('jobs').orderBy('score', 'desc').limit(30).onSnapshot(function(snap){
+      latestJobs = (snap.docs || []).filter(function(d){ return d.exists; }).map(function(d){ return d.data(); });
+      document.getElementById('stat-shown').textContent = latestJobs.length;
+      document.getElementById('stat-new').textContent = latestJobs.filter(function(j){ return j.is_new; }).length;
+      renderJobs();
+    }, function(){ document.getElementById('sync-text').textContent = 'Live sync error — showing last known data.'; });
+
+    db.doc('meta/status').onSnapshot(function(doc){
+      if (!doc || !doc.exists) return;
+      var data = doc.data();
+      document.getElementById('stat-scanned').textContent = data.total_candidates != null ? data.total_candidates : '–';
+      document.getElementById('sync-text').textContent = 'Last synced ' + fmtSyncTime(data.last_synced) + ' · auto-syncs ~hourly';
+    });
+  }
+  init();
+})();
+</script>
