@@ -10,6 +10,14 @@ You review and apply yourself, one click at a time.
 This is a separate, deployable sibling of the Claude Artifact version in
 the repo root — use whichever you prefer; they don't share data.
 
+## Quick deploy
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fthepakpal%2FClaudeAgent%2Ftree%2Fclaude%2Flinkedin-job-agent-nknfwh&root-directory=webapp&project-name=job-match-board&env=SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,ADMIN_PASSWORD,SESSION_SECRET,CRON_SECRET&envDescription=Supabase%20keys%20come%20from%20Project%20Settings%20%E2%86%92%20API%3B%20pick%20your%20own%20ADMIN_PASSWORD%3B%20SESSION_SECRET%2FCRON_SECRET%20are%20any%20random%20strings&envLink=https%3A%2F%2Fgithub.com%2Fthepakpal%2FClaudeAgent%2Fblob%2Fclaude%2Flinkedin-job-agent-nknfwh%2Fwebapp%2FREADME.md)
+
+This pre-fills the Vercel import with the right root directory (`webapp`)
+and prompts for every required env var by name. You still need a Supabase
+project first (step 1 below) to get two of those values.
+
 ## Stack
 
 - **Next.js 14** (App Router, TypeScript) — `app/`, `components/`, `lib/`
